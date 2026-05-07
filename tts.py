@@ -55,7 +55,6 @@ class KokoroTTS:
 
         if not chunk_found:
             raise RuntimeError("오디오 생성 실패")
-
         return wav_buffer.getvalue()
 
     def stream_wav_bytes(self, text: str):
