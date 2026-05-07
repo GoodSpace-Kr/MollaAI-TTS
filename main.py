@@ -16,7 +16,6 @@ class TTSRequest(BaseModel):
 
 app = FastAPI(title="Molla TTS Server", version="1.0.0")
 
-
 @app.get("/health")
 def health():
     return {"status": "ok"}
