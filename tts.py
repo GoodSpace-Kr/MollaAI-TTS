@@ -109,6 +109,7 @@ class KokoroTTS:
             return
         raise RuntimeError("오디오 플레이어가 없습니다. aplay, ffplay, mpv 중 하나를 설치하세요.")
 
+
     def speak(self, text: str, filename="reply.wav") -> str:
         import time
         start_time = time.time()
