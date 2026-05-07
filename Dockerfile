@@ -8,7 +8,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PATH="/opt/venv/bin:${PATH}" \
     PYTHONPATH=/app \
     HOST=0.0.0.0 \
-    PORT=8000
+    PORT=8002
 
 WORKDIR /app
 
@@ -41,6 +41,6 @@ RUN pip install --index-url https://download.pytorch.org/whl/cu130 \
 
 COPY . /app
 
-EXPOSE 8000
+EXPOSE 8002
 
-CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8002", "--proxy-headers"]
