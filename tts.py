@@ -10,7 +10,7 @@ import soundfile as sf
 from kokoro import KPipeline
 
 class KokoroTTS:
-    def __init__(self, lang_code="a", voiceㄴ="af_heart", sample_rate=24000, output_dir="tts_out"):
+    def __init__(self, lang_code="a", voice="af_heart", sample_rate=24000, output_dir="tts_out"):
         self.pipeline = KPipeline(lang_code=lang_code)
         self.voice = voice
         self.sample_rate = sample_rate

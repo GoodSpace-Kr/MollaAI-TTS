@@ -1,10 +1,14 @@
 import os
+import logging
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from tts import KokoroTTS
+
+
+logger = logging.getLogger("molla.tts")
 
 
 class TTSRequest(BaseModel):
@@ -41,4 +45,11 @@ def stream_tts(payload: TTSRequest):
             headers=headers,
         )
     except Exception as exc:
+        logger.exception(
+            "tts_stream_failed voice=%s lang_code=%s sample_rate=%s text_len=%s",
+            payload.voice,
+            payload.lang_code,
+            payload.sample_rate,
+            len(payload.text),
+        )
         raise HTTPException(status_code=500, detail=str(exc)) from exc
