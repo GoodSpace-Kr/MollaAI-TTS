@@ -58,8 +58,6 @@ class KokoroTTS:
         return wav_buffer.getvalue()
 
     def stream_wav_bytes(self, text: str):
-        # Use an open-ended WAV header so the client can start consuming audio
-        # before total length is known.
         yield self._wav_header()
 
         chunk_found = False
