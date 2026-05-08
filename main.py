@@ -7,7 +7,6 @@ from pydantic import BaseModel, Field
 
 from tts import KokoroTTS
 
-
 logger = logging.getLogger("molla.tts")
 
 
