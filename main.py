@@ -17,7 +17,6 @@ class TTSRequest(BaseModel):
     lang_code: str = Field(default="a", description="Kokoro language code")
     sample_rate: int = Field(default=24000, ge=8000, le=48000)
 
-
 app = FastAPI(title="Molla TTS Server", version="1.0.0")
 
 @app.get("/health")
