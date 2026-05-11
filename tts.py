@@ -15,7 +15,6 @@ from kokoro import KPipeline
 
 logger = logging.getLogger("molla.tts")
 
-
 @dataclass(slots=True)
 class PipelineHandle:
     pipeline: KPipeline
