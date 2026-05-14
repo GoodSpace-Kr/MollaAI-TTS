@@ -6,6 +6,7 @@ on:
 
 env:
   DOCKERHUB_REPO: goodspace/molla-tts
+  DOCKERHUB_BASE_REPO: goodspace/molla-tts-base
   CONTAINER_NAME: molla-tts
   TARGET_IPS: "3.36.184.67"
 
@@ -16,6 +17,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 2
 
     # 1. 도커 허브 로그인
     - name: Login to Docker Hub
@@ -24,10 +27,32 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # 2. 도커 이미지 빌드 및 푸시
-    - name: Build and push
+    - name: Decide whether base image changed
+      id: base_changed
       run: |
-        docker build -t ${{ env.DOCKERHUB_REPO }}:latest .
+        BEFORE_SHA="${{ github.event.before }}"
+        if [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+        elif git diff --name-only "$BEFORE_SHA" "${{ github.sha }}" | grep -Eq '^(Dockerfile.base|requirements.txt)$'; then
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "changed=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Build and push base image
+      if: steps.base_changed.outputs.changed == 'true'
+      run: |
+        docker build -f Dockerfile.base \
+          -t ${{ env.DOCKERHUB_BASE_REPO }}:py311-cu130 .
+        docker push ${{ env.DOCKERHUB_BASE_REPO }}:py311-cu130
+
+    # 2. 도커 이미지 빌드 및 푸시
+    - name: Build and push app image
+      run: |
+        docker build \
+          -t ${{ env.DOCKERHUB_REPO }}:${{ github.sha }} \
+          -t ${{ env.DOCKERHUB_REPO }}:latest .
+        docker push ${{ env.DOCKERHUB_REPO }}:${{ github.sha }}
         docker push ${{ env.DOCKERHUB_REPO }}:latest
 
     # 3. 서버에 접속해서 배포
@@ -39,10 +64,15 @@ jobs:
         for IP in ${{ env.TARGET_IPS }}; do
           echo "🚀 Deploying to $IP..."
           ssh -i private_key.pem -o StrictHostKeyChecking=no ubuntu@$IP "
-            docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }} && \
-            docker stop ${{ env.CONTAINER_NAME }} || true && \
-            docker rm ${{ env.CONTAINER_NAME }} || true && \
-            docker pull ${{ env.DOCKERHUB_REPO }}:latest && \
-            docker run --gpus all -d --name ${{ env.CONTAINER_NAME }} -p 8002:8002 ${{ env.DOCKERHUB_REPO }}:latest
+            set -e
+            IMAGE=${{ env.DOCKERHUB_REPO }}:${{ github.sha }}
+            printf '%s' '${{ secrets.DOCKERHUB_TOKEN }}' | docker login -u '${{ secrets.DOCKERHUB_USERNAME }}' --password-stdin
+            docker stop ${{ env.CONTAINER_NAME }} || true
+            docker rm ${{ env.CONTAINER_NAME }} || true
+            docker image prune -af || true
+            docker builder prune -af || true
+            docker pull \$IMAGE
+            docker run --gpus all -d --restart unless-stopped --name ${{ env.CONTAINER_NAME }} -p 8002:8002 \$IMAGE
+            docker image prune -af || true
           "
         done
